@@ -6,6 +6,7 @@ class Field extends Component {
 
   componentDidMount() {
     console.log("this.context:", this.context);
+    
     this.unregister = this.context.registerInstance(this);
   }
 
@@ -13,16 +14,19 @@ class Field extends Component {
     this.unregister();
   }
 
+  onStoreChange = () => {
+    this.forceUpdate();
+  }
+
   getControlled = () => {
-    const { getFildValue, setFildsValue } = this.context;
+    const { getFieldValue, setFieldsValue } = this.context;
     const { name } = this.props;
 
     return {
-      value: getFildValue(name),
+      value: getFieldValue(name),
       onChange: (e) => {
         const newValue = e.target.value;
-        setFildsValue({ [name]: newValue });
-        // this.forceUpdate(); 写这里太暴力了
+        setFieldsValue({ [name]: newValue });
       },
     };
   };

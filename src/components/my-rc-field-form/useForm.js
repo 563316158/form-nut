@@ -7,7 +7,13 @@ class FormStore {
   constructor() {
     this.store = {};
     this.instances = [];
+
+    this.callbacks = {};
   }
+
+  setCallbacks = (callbacks) => {
+    this.callbacks = { ...this.callbacks, ...callbacks };
+  };
 
   // 注册实例
   // 注册实例和取消实例要写在一起
@@ -21,16 +27,16 @@ class FormStore {
   };
 
   // get
-  getFildsValue = () => {
+  getFieldsValue = () => {
     return { ...this.store };
   };
 
-  getFildValue = (name) => {
+  getFieldValue = (name) => {
     return this.store[name];
   };
 
   // set
-  setFildsValue = (newStore) => {
+  setFieldsValue = (newStore) => {
     this.store = {
       ...this.store,
       ...newStore,
@@ -40,28 +46,66 @@ class FormStore {
       // debugger;
       Object.keys(newStore).forEach((k) => {
         if (k === item.props.name) {
-          item.forceUpdate();
+          item.onStoreChange();
         }
       });
     });
   };
 
+  // 效验
+  validate = () => {
+    let err = [];
+
+    this.instances.forEach((instance) => {
+      const { name, rules } = instance.props;
+      const value = this.getFieldValue(name);
+      let rule = rules[0];
+      if (rule && rule.required && (value === undefined || value === "")) {
+        err.push({ [name]: rule.message });
+      }
+    });
+    return err;
+  };
+
+  submit = () => {
+    console.log("submit");
+
+    const err = this.validate();
+
+    const { onFinish, onFinishFailed } = this.callbacks;
+
+    const values = this.getFieldsValue();
+
+    if (err.length === 0) {
+      // 效验成功
+      onFinish(values);
+    } else {
+      onFinishFailed(err, values);
+    }
+  };
+
   getForm = () => {
     return {
-      getFildsValue: this.getFildsValue,
-      getFildValue: this.getFildValue,
-      setFildsValue: this.setFildsValue,
+      getFieldsValue: this.getFieldsValue,
+      getFieldValue: this.getFieldValue,
+      setFieldsValue: this.setFieldsValue,
       registerInstance: this.registerInstance,
+      submit: this.submit,
+      setCallbacks: this.setCallbacks,
     };
   };
 }
 
-function useForm() {
+function useForm(form) {
   const formRef = useRef();
 
   if (!formRef.current) {
-    const formStore = new FormStore();
-    formRef.current = formStore.getForm();
+    if (form) {
+      formRef.current = form;
+    } else {
+      const formStore = new FormStore();
+      formRef.current = formStore.getForm();
+    }
   }
 
   return [formRef.current];
